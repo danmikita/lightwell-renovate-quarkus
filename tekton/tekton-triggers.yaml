@@ -1,0 +1,87 @@
+---
+apiVersion: triggers.tekton.dev/v1beta1
+kind: TriggerBinding
+metadata:
+  name: github-push-binding
+  labels:
+    app.kubernetes.io/part-of: lightwell-renovate-demo
+spec:
+  params:
+    - name: git-repo-full-name
+      value: $(body.repository.full_name)
+    - name: git-revision
+      value: $(body.after)
+---
+apiVersion: triggers.tekton.dev/v1beta1
+kind: TriggerTemplate
+metadata:
+  name: renovate-trigger-template
+  labels:
+    app.kubernetes.io/part-of: lightwell-renovate-demo
+spec:
+  params:
+    - name: git-repo-full-name
+      description: The GitHub owner/repo full name (e.g. danmikita/lightwell-renovate-quarkus)
+    - name: git-revision
+      description: Commit SHA that triggered the run
+      default: main
+  resourcetemplates:
+    - apiVersion: tekton.dev/v1
+      kind: PipelineRun
+      metadata:
+        generateName: renovate-on-commit-
+        labels:
+          app.kubernetes.io/part-of: lightwell-renovate-demo
+          tekton.dev/commit-sha: $(tt.params.git-revision)
+      spec:
+        taskRef:
+          name: renovate-remediate
+        params:
+          - name: git-repo
+            value: $(tt.params.git-repo-full-name)
+          - name: renovate-secret-name
+            value: renovate-credentials
+          - name: dry-run
+            value: "false"
+---
+apiVersion: triggers.tekton.dev/v1beta1
+kind: EventListener
+metadata:
+  name: renovate-listener
+  labels:
+    app.kubernetes.io/part-of: lightwell-renovate-demo
+    app.openshift.io/runtime: tekton
+spec:
+  serviceAccountName: pipeline
+  triggers:
+    - name: github-push-main
+      interceptors:
+        - ref:
+            name: "cel"
+          params:
+            - name: "filter"
+              value: >
+                header.Canonical("X-Github-Event") == "push" &&
+                body.ref == "refs/heads/main" &&
+                !body.head_commit.message.startsWith("chore(deps):")
+      bindings:
+        - ref: github-push-binding
+      template:
+        ref: renovate-trigger-template
+---
+apiVersion: route.openshift.io/v1
+kind: Route
+metadata:
+  name: el-renovate-listener
+  labels:
+    app.kubernetes.io/part-of: lightwell-renovate-demo
+spec:
+  to:
+    kind: Service
+    name: el-renovate-listener
+    weight: 100
+  port:
+    targetPort: http-listener
+  tls:
+    termination: edge
+    insecureEdgeTerminationPolicy: Allow

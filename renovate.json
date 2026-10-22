@@ -1,0 +1,21 @@
+{
+  "$schema": "https://docs.renovatebot.com/renovate-schema.json",
+  "enabledManagers": ["maven"],
+  "onboarding": false,
+  "requireConfig": "optional",
+  "packageRules": [
+    {
+      "description": "Disable updates for all packages by default to keep demo execution under 30s",
+      "matchPackagePatterns": ["*"],
+      "enabled": false
+    },
+    {
+      "description": "Remediate vulnerable commons-compress via Red Hat Lightwell repository",
+      "matchPackageNames": ["org.apache.commons:commons-compress"],
+      "enabled": true,
+      "registryUrls": [
+        "https://repo.lightwell.redhat.com/maven/public"
+      ]
+    }
+  ]
+}

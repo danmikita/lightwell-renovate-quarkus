@@ -1,0 +1,16 @@
+apiVersion: tekton.dev/v1
+kind: PipelineRun
+metadata:
+  generateName: renovate-lightwell-run-
+  labels:
+    app.kubernetes.io/part-of: lightwell-renovate-demo
+spec:
+  taskRef:
+    name: renovate-remediate
+  params:
+    - name: git-repo
+      value: "redhat-demo/lightwell-quarkus-quickstart"
+    - name: renovate-secret-name
+      value: "renovate-credentials"
+    - name: dry-run
+      value: "false"

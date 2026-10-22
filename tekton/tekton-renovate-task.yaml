@@ -1,0 +1,47 @@
+apiVersion: tekton.dev/v1
+kind: Task
+metadata:
+  name: renovate-remediate
+  labels:
+    app.kubernetes.io/part-of: lightwell-renovate-demo
+spec:
+  description: >-
+    Runs Renovate CLI against a target repository to automatically remediate
+    vulnerable Maven dependencies using the Lightwell artifact repository.
+  params:
+    - name: git-repo
+      type: string
+      description: The target repository identifier (e.g. org/lightwell-quarkus-quickstart)
+    - name: renovate-secret-name
+      type: string
+      description: Kubernetes Secret containing RENOVATE_TOKEN and RENOVATE_PLATFORM
+      default: renovate-credentials
+    - name: dry-run
+      type: string
+      description: Renovate dry-run mode (false, lookup, full)
+      default: "false"
+  steps:
+    - name: run-renovate
+      image: docker.io/renovate/renovate:latest
+      env:
+        - name: RENOVATE_TOKEN
+          valueFrom:
+            secretKeyRef:
+              name: $(params.renovate-secret-name)
+              key: RENOVATE_TOKEN
+        - name: RENOVATE_PLATFORM
+          valueFrom:
+            secretKeyRef:
+              name: $(params.renovate-secret-name)
+              key: RENOVATE_PLATFORM
+        - name: RENOVATE_ENDPOINT
+          valueFrom:
+            secretKeyRef:
+              name: $(params.renovate-secret-name)
+              key: RENOVATE_ENDPOINT
+              optional: true
+        - name: LOG_LEVEL
+          value: info
+      args:
+        - "--dry-run=$(params.dry-run)"
+        - "$(params.git-repo)"

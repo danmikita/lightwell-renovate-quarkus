@@ -1,0 +1,130 @@
+schemaVersion: 2.2.2
+metadata:
+  name: lightwell-renovate-quarkus
+  displayName: Lightwell + Renovate Quarkus Demo
+  description: Automated CVE remediation with Renovate CLI, Red Hat Lightwell, and Quarkus 3 on OpenShift
+  icon: https://design.jboss.org/quarkus/logo/final/svg/quarkus_icon_rgb_default.svg
+  tags:
+    - Java
+    - Quarkus
+    - Renovate
+    - Lightwell
+    - OpenShift
+  projectType: quarkus
+  language: java
+
+components:
+  - name: tools
+    container:
+      image: registry.redhat.io/devspaces/udi-rhel9:latest
+      memoryLimit: 6Gi
+      memoryRequest: 2Gi
+      cpuLimit: 2000m
+      cpuRequest: 500m
+      mountSources: true
+      env:
+        - name: NPM_CONFIG_PREFIX
+          value: /home/user/.npm-global
+        - name: PATH
+          value: /home/user/.npm-global/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
+      endpoints:
+        - name: quarkus-archive-endpoint
+          targetPort: 8080
+          exposure: public
+          protocol: https
+          path: /archive
+      volumeMounts:
+        - name: m2
+          path: /home/user/.m2
+        - name: npm-global
+          path: /home/user/.npm-global
+  - name: m2
+    volume:
+      size: 3Gi
+  - name: npm-global
+    volume:
+      size: 2Gi
+
+events:
+  postStart:
+    - bootstrap-workspace
+
+commands:
+  - id: bootstrap-workspace
+    exec:
+      label: "0. Auto-Bootstrap Renovate CLI & Tekton Triggers (Runs on start)"
+      component: tools
+      workingDir: ${PROJECT_SOURCE}
+      commandLine: |
+        mkdir -p /home/user/.npm-global
+        if ! command -v renovate >/dev/null 2>&1; then
+          echo "Installing Renovate CLI into persistent volume (/home/user/.npm-global)..."
+          npm install -g renovate --no-fund --no-audit
+        else
+          echo "Renovate CLI already pre-installed: $(renovate --version)"
+        fi
+        if oc whoami >/dev/null 2>&1; then
+          echo "Deploying Tekton Task and Webhook EventListener to OpenShift namespace..."
+          oc apply -f tekton/tekton-renovate-task.yaml || true
+          oc apply -f tekton/tekton-triggers.yaml || true
+        fi
+
+  - id: quarkus-dev
+    exec:
+      label: "1. Start Quarkus Live Coding (/archive endpoint)"
+      component: tools
+      workingDir: ${PROJECT_SOURCE}
+      commandLine: "mvn quarkus:dev -Dquarkus.http.host=0.0.0.0"
+      group:
+        kind: run
+        isDefault: true
+
+  - id: run-renovate-local
+    exec:
+      label: "2. Run Renovate Local Scan (Lightwell Repo Dry-Run)"
+      component: tools
+      workingDir: ${PROJECT_SOURCE}
+      commandLine: "./run-demo-local.sh"
+      group:
+        kind: test
+        isDefault: true
+
+  - id: deploy-openshift-s2i
+    exec:
+      label: "3. Deploy App to OpenShift Sandbox (S2I Binary Build)"
+      component: tools
+      workingDir: ${PROJECT_SOURCE}
+      commandLine: |
+        mvn clean package -DskipTests -Dquarkus.kubernetes.deploy=true
+        echo ""
+        echo "=================================================================="
+        ROUTE_URL=$(oc get route lightwell-quarkus-quickstart -o jsonpath='https://{.spec.host}/archive' 2>/dev/null || true)
+        echo "Live Endpoint URL: ${ROUTE_URL}"
+        echo "=================================================================="
+      group:
+        kind: build
+        isDefault: true
+
+  - id: setup-webhook-and-secret
+    exec:
+      label: "4. Configure GitHub Token Secret & Auto-Register Webhook"
+      component: tools
+      workingDir: ${PROJECT_SOURCE}
+      commandLine: |
+        if [ -z "${GITHUB_TOKEN:-}" ]; then
+          read -rsp "Enter your GitHub Personal Access Token (repo + admin:repo_hook): " GITHUB_TOKEN
+          echo ""
+          export GITHUB_TOKEN
+        fi
+        ./setup-sandbox.sh
+
+  - id: trigger-tekton-pipeline
+    exec:
+      label: "5. Manually Trigger Tekton Renovate PipelineRun Now"
+      component: tools
+      workingDir: ${PROJECT_SOURCE}
+      commandLine: |
+        oc apply -f tekton/tekton-renovate-task.yaml
+        oc create -f tekton/tekton-pipeline-run.yaml
+        echo "Triggered Tekton PipelineRun! Watching logs with tkn..."
+        tkn pipelinerun logs --last -f || oc get pipelinerun
