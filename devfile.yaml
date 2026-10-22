@@ -28,7 +28,7 @@ components:
         - name: PATH
           value: /home/user/.npm-global/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
       endpoints:
-        - name: quarkus-archive-endpoint
+        - name: quarkus-http
           targetPort: 8080
           exposure: public
           protocol: https
