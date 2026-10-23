@@ -50,3 +50,32 @@ spec:
           value: info
       args:
         - "$(params.git-repo)"
+---
+apiVersion: tekton.dev/v1
+kind: Pipeline
+metadata:
+  name: renovate-remediate-pipeline
+  labels:
+    app.kubernetes.io/part-of: lightwell-renovate-demo
+spec:
+  description: >-
+    Scans a GitHub repository with Renovate CLI and opens a Pull Request to
+    remediate vulnerable Maven dependencies using Red Hat Lightwell.
+  params:
+    - name: git-repo
+      type: string
+      description: The target GitHub repository (owner/repo)
+      default: "danmikita/lightwell-renovate-quarkus"
+    - name: renovate-secret-name
+      type: string
+      description: Kubernetes Secret containing Renovate and Lightwell credentials
+      default: "renovate-credentials"
+  tasks:
+    - name: renovate-remediate
+      taskRef:
+        name: renovate-remediate
+      params:
+        - name: git-repo
+          value: $(params.git-repo)
+        - name: renovate-secret-name
+          value: $(params.renovate-secret-name)

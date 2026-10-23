@@ -4,22 +4,10 @@ metadata:
   generateName: renovate-lightwell-run-
   labels:
     app.kubernetes.io/part-of: lightwell-renovate-demo
+    tekton.dev/pipeline: renovate-remediate-pipeline
 spec:
-  pipelineSpec:
-    params:
-      - name: git-repo
-        type: string
-      - name: renovate-secret-name
-        type: string
-    tasks:
-      - name: renovate-remediate
-        taskRef:
-          name: renovate-remediate
-        params:
-          - name: git-repo
-            value: $(params.git-repo)
-          - name: renovate-secret-name
-            value: $(params.renovate-secret-name)
+  pipelineRef:
+    name: renovate-remediate-pipeline
   params:
     - name: git-repo
       value: "danmikita/lightwell-renovate-quarkus"
