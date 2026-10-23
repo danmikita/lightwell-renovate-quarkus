@@ -119,6 +119,7 @@ commands:
       workingDir: ${PROJECT_SOURCE}
       commandLine: |
         oc apply -f tekton/tekton-renovate-task.yaml
+        oc apply -f tekton/tekton-triggers.yaml
         oc create -f tekton/tekton-pipeline-run.yaml
         echo "Triggered Tekton PipelineRun! Watching logs with tkn..."
         tkn pipelinerun logs --last -f || oc get pipelinerun
