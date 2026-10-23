@@ -88,6 +88,8 @@ else
 fi
 
 export RENOVATE_HOST_RULES="[{\"matchHost\":\"${LIGHTWELL_REPO_URL}\",\"username\":\"${LIGHTWELL_USERNAME}\",\"password\":\"${LIGHTWELL_TOKEN}\"}]"
+export RENOVATE_ONBOARDING="false"
+export RENOVATE_REQUIRE_CONFIG="optional"
 
 if [ "${VERBOSE:-false}" = "true" ]; then
   LOG_LEVEL=debug $RENOVATE_CMD --platform=local --dry-run=lookup

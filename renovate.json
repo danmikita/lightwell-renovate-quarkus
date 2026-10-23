@@ -1,8 +1,6 @@
 {
   "$schema": "https://docs.renovatebot.com/renovate-schema.json",
   "enabledManagers": ["maven"],
-  "onboarding": false,
-  "requireConfig": "optional",
   "packageRules": [
     {
       "description": "Disable updates for all packages by default to keep demo execution under 30s",

@@ -40,8 +40,6 @@ spec:
               type: string
             - name: renovate-secret-name
               type: string
-            - name: dry-run
-              type: string
           tasks:
             - name: renovate-remediate
               taskRef:
@@ -51,15 +49,11 @@ spec:
                   value: $(params.git-repo)
                 - name: renovate-secret-name
                   value: $(params.renovate-secret-name)
-                - name: dry-run
-                  value: $(params.dry-run)
         params:
           - name: git-repo
             value: $(tt.params.git-repo-full-name)
           - name: renovate-secret-name
             value: renovate-credentials
-          - name: dry-run
-            value: "false"
 ---
 apiVersion: triggers.tekton.dev/v1beta1
 kind: EventListener

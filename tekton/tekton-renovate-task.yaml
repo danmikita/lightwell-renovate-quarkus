@@ -16,10 +16,6 @@ spec:
       type: string
       description: Kubernetes Secret containing RENOVATE_TOKEN and RENOVATE_PLATFORM
       default: renovate-credentials
-    - name: dry-run
-      type: string
-      description: Renovate dry-run mode (false, lookup, full)
-      default: "false"
   steps:
     - name: run-renovate
       image: docker.io/renovate/renovate:latest
@@ -46,8 +42,11 @@ spec:
               name: $(params.renovate-secret-name)
               key: RENOVATE_HOST_RULES
               optional: true
+        - name: RENOVATE_ONBOARDING
+          value: "false"
+        - name: RENOVATE_REQUIRE_CONFIG
+          value: "optional"
         - name: LOG_LEVEL
           value: info
       args:
-        - "--dry-run=$(params.dry-run)"
         - "$(params.git-repo)"
