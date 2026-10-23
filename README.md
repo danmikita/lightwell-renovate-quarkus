@@ -2,7 +2,7 @@
 
 [![Open in Red Hat OpenShift DevSpaces](https://img.shields.io/badge/Open%20in-OpenShift%20DevSpaces-EE0000?style=for-the-badge&logo=redhat&logoColor=white)](https://workspaces.openshift.com#https://github.com/danmikita/lightwell-renovate-quarkus)
 
-A minimal, turnkey **Quarkus 3.x (Java 21)** application designed for the **Red Hat Developer Sandbox** (`developer.redhat.com`) that demonstrates automated CVE remediation using **Renovate CLI** pointed at a **Red Hat Lightwell** Maven artifact repository (`https://repo.lightwell.redhat.com/maven/public`).
+A minimal, turnkey **Quarkus 3.x (Java 21)** application designed for the **Red Hat Developer Sandbox** (`developer.redhat.com`) that demonstrates automated CVE remediation using **Renovate CLI** pointed at the **Red Hat Lightwell Network - Remediated** Maven repository (`https://packages.redhat.com/lightwell/java/remediated/`).
 
 ---
 
@@ -17,7 +17,7 @@ A minimal, turnkey **Quarkus 3.x (Java 21)** application designed for the **Red 
 3. **Commit -> Tekton -> Automatic PR:**
    - Whenever a commit is pushed to `main`, GitHub sends a webhook to the OpenShift `EventListener` Route.
    - Tekton automatically launches a `renovate-on-commit-xxxxx` `PipelineRun`.
-   - Renovate scans `pom.xml`, detects vulnerable `org.apache.commons:commons-compress:1.20` (CVE-2021-35515), looks up the patched release from `https://repo.lightwell.redhat.com/maven/public`, and automatically opens a remediation Pull Request on GitHub.
+   - Renovate scans `pom.xml`, detects vulnerable `org.apache.commons:commons-compress:1.9`, looks up the patched release from `https://packages.redhat.com/lightwell/java/remediated/`, and automatically opens a remediation Pull Request on GitHub.
 
 ---
 
@@ -39,11 +39,11 @@ Open the **Terminal -> Run Task... -> devfile** menu in OpenShift DevSpaces (or 
 #### Task 1: `1. Start Quarkus Live Coding (/archive endpoint)`
 Starts Quarkus in dev mode and opens `/archive`:
 ```text
-Apache Commons Compress (TarArchiveInputStream) version: 1.20
+Apache Commons Compress (TarArchiveInputStream) version: 1.9
 ```
 
 #### Task 2: `2. Run Renovate Local Scan (Lightwell Repo Dry-Run)`
-Runs `./run-demo-local.sh` using the pre-installed `renovate` CLI in `--platform=local --dry-run=true` mode to prove Renovate identifies `org.apache.commons:commons-compress:1.20` and targets `https://repo.lightwell.redhat.com/maven/public` without needing a commit first.
+Runs `./run-demo-local.sh` (prompting once for your Lightwell Service Account username & token to configure `~/.m2/settings.xml` and `RENOVATE_HOST_RULES`) and runs `renovate` in `--platform=local --dry-run=lookup` mode to verify `org.apache.commons:commons-compress:1.9` remediation against `https://packages.redhat.com/lightwell/java/remediated/`.
 
 #### Task 3: `3. Deploy App to OpenShift Sandbox (S2I Binary Build)`
 Compiles the app and streams it into an OpenShift S2I binary build pushed directly to the internal OpenShift `ImageStream` (no external container registry required), creating the `Deployment`, `Service`, and HTTPS `Route`:
@@ -51,11 +51,12 @@ Compiles the app and streams it into an OpenShift S2I binary build pushed direct
 mvn clean package -DskipTests -Dquarkus.kubernetes.deploy=true
 ```
 
-#### Task 4: `4. Configure GitHub Token Secret & Auto-Register Webhook`
-Prompts for your GitHub Personal Access Token (`repo` + `admin:repo_hook` scopes) and runs [`./setup-sandbox.sh`](./setup-sandbox.sh), which:
-1. Creates the `renovate-credentials` Kubernetes Secret in your namespace.
-2. Queries the public URL of the `el-renovate-listener` OpenShift Route.
-3. Calls the GitHub REST API to automatically register that Route URL as a push webhook on your repository.
+#### Task 4: `4. Configure Lightwell & GitHub Credentials + Auto-Register Webhook`
+Prompts for your Lightwell Service Account credentials and GitHub Personal Access Token (`repo` + `admin:repo_hook` scopes) and runs [`./setup-sandbox.sh`](./setup-sandbox.sh), which:
+1. Writes `~/.m2/settings.xml` with the `lightwell-remediated` profile and server credentials.
+2. Creates the `renovate-credentials` Kubernetes Secret in your namespace (including `RENOVATE_HOST_RULES` for Lightwell authentication).
+3. Queries the public URL of the `el-renovate-listener` OpenShift Route.
+4. Calls the GitHub REST API to automatically register that Route URL as a push webhook on your repository.
 
 *(Now any `git commit && git push` to `main` will automatically trigger Tekton in OpenShift and open a Renovate PR!)*
 

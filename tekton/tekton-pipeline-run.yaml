@@ -9,7 +9,7 @@ spec:
     name: renovate-remediate
   params:
     - name: git-repo
-      value: "redhat-demo/lightwell-quarkus-quickstart"
+      value: "danmikita/lightwell-renovate-quarkus"
     - name: renovate-secret-name
       value: "renovate-credentials"
     - name: dry-run

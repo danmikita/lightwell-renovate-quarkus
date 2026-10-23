@@ -10,11 +10,13 @@
       "enabled": false
     },
     {
-      "description": "Remediate vulnerable commons-compress via Red Hat Lightwell repository",
+      "description": "Remediate vulnerable commons-compress via Red Hat Lightwell Network - Remediated",
       "matchPackageNames": ["org.apache.commons:commons-compress"],
       "enabled": true,
+      "ignoreUnstable": false,
+      "separateMinorPatch": true,
       "registryUrls": [
-        "https://repo.lightwell.redhat.com/maven/public"
+        "https://packages.redhat.com/lightwell/java/remediated/"
       ]
     }
   ]

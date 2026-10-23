@@ -107,16 +107,10 @@ commands:
 
   - id: setup-webhook-and-secret
     exec:
-      label: "4. Configure GitHub Token Secret & Auto-Register Webhook"
+      label: "4. Configure Lightwell & GitHub Credentials + Auto-Register Webhook"
       component: tools
       workingDir: ${PROJECT_SOURCE}
-      commandLine: |
-        if [ -z "${GITHUB_TOKEN:-}" ]; then
-          read -rsp "Enter your GitHub Personal Access Token (repo + admin:repo_hook): " GITHUB_TOKEN
-          echo ""
-          export GITHUB_TOKEN
-        fi
-        ./setup-sandbox.sh
+      commandLine: "./setup-sandbox.sh"
 
   - id: trigger-tekton-pipeline
     exec:

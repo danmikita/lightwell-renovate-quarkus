@@ -16,14 +16,13 @@
         <quarkus.platform.artifact-id>quarkus-bom</quarkus.platform.artifact-id>
         <quarkus.platform.group-id>io.quarkus.platform</quarkus.platform.group-id>
         <quarkus.platform.version>3.15.1</quarkus.platform.version>
-        <commons-compress.version>1.20</commons-compress.version>
     </properties>
 
     <repositories>
         <repository>
-            <id>lightwell-public</id>
-            <name>Red Hat Lightwell Public Maven Repository</name>
-            <url>https://repo.lightwell.redhat.com/maven/public</url>
+            <id>lightwell-remediated</id>
+            <name>Red Hat Lightwell Network - Remediated</name>
+            <url>https://packages.redhat.com/lightwell/java/remediated/</url>
             <releases>
                 <enabled>true</enabled>
             </releases>
@@ -55,11 +54,11 @@
             <artifactId>quarkus-openshift</artifactId>
         </dependency>
 
-        <!-- Vulnerable dependency pinned outside BOM (CVE-2021-35515) -->
+        <!-- Vulnerable dependency pinned outside BOM (remediated in Lightwell Java Remediated) -->
         <dependency>
             <groupId>org.apache.commons</groupId>
             <artifactId>commons-compress</artifactId>
-            <version>1.20</version>
+            <version>1.9</version>
         </dependency>
     </dependencies>
 
